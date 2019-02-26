@@ -9,10 +9,12 @@ from urllib.parse import urlparse
 import logging
 
 paths = {
-            '/foo': {'status': 200},
-            '/bar': {'status': 302},
-            '/baz': {'status': 404},
-            '/qux': {'status': 500}
+            '/home'          : {'status': 200, 'mimetype' :'text/html', 'html_path': '../web_root/static/index.html'},
+            '/css/style.css' : {'status': 200, 'mimetype' :'text/css', 'html_path': '../web_root/css/style.css'},
+            '/foo'           : {'status': 200},
+            '/bar'           : {'status': 302},
+            '/baz'           : {'status': 404},
+            '/qux'           : {'status': 500}
         }
 
 class HTTPServer_RequestHandler(BaseHTTPRequestHandler):
@@ -47,13 +49,22 @@ class HTTPServer_RequestHandler(BaseHTTPRequestHandler):
         self.send_response(status_code)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
-        content = '''
+        htmlContent = ''
+        htmlPath = ''
+        if paths[self.path]['mimetype']:
+            self.send_header('Content-type', paths[self.path]['mimetype'])
+        if paths[self.path]['html_path']:
+            htmlPath = paths[self.path]['html_path']
+            with open(htmlPath, 'rb') as f:
+                htmlContent = f.read()
+        else:
+            htmlContent = '''
            <html><head><title>Title goes here.</title></head>
            <body><p>This is a test.</p>
            <p>You accessed path: {}</p>
            </body></html>
-           '''.format(path)
-        return bytes(content, 'UTF-8')
+           '''.format(path).encode('utf_8')
+        return htmlContent
 
 def run(server_class=HTTPServer, handler_class=HTTPServer_RequestHandler, port=8080):
     logging.basicConfig(level=logging.INFO)
