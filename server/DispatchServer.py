@@ -3,40 +3,72 @@ Created on 2019年2月26日
 
 @author: vargen
 '''
+
+import sys
+import os
+
+sys.path.append('../') 
+
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from os import path
-from urllib.parse import urlparse
 import logging
+import json
+from managerment.ManageServer import ManagerService
 
 MIMETYPE = {
-               'html' : 'text/html',
-               'css'  : 'text/css',
-               'txt'  : 'text/plain',
-               'mpeg' : 'video/mpeg',
-               'mpg'  : 'video/mpeg',
-               'mov'  : 'video/quicktime'
+                'html' : 'text/html',
+                'css'  : 'text/css',
+                'txt'  : 'text/plain',
+                'mpeg' : 'video/mpeg',
+                'mpg'  : 'video/mpeg',
+                'mov'  : 'video/quicktime'
             }
-  
+ENCTYPE  = {
+                'default'    : 'application/x-www-form-urlencoded',
+                'file'       : 'multipart/form-data',
+                'space2plus' : 'text/plain',
+                'json'       : 'application/json'
+            }   
 pathsMap = {
-            '/favicon.ico'   : {'status': 200, 'html_path': '../web_root/images/wb_favicon.ico'},
-            '/home'          : {'status': 200, 'mimetype' : MIMETYPE['html'], 'html_path': '../web_root/static/index.html'},
-            '/css/style.css' : {'status': 200, 'mimetype' : MIMETYPE['css'], 'html_path': '../web_root/css/style.css'},
+                '/favicon.ico'   : {'status': 200, 'html_path': '../web_root/images/wb_favicon.ico'},
+                '/home'          : {'status': 200, 'mimetype' : MIMETYPE['html'], 'html_path': '../web_root/static/index.html'},
+                '/css/style.css' : {'status': 200, 'mimetype' : MIMETYPE['css'], 'html_path': '../web_root/css/style.css'},
             
-            '/login'         : {'status': 200},
+                '/login'         : {'status': 200},
             
-            '/foo'           : {'status': 200},
-            '/bar'           : {'status': 302},
-            '/baz'           : {'status': 404},
-            '/qux'           : {'status': 500}
-        }
+                '/foo'           : {'status': 200},
+                '/bar'           : {'status': 302},
+                '/baz'           : {'status': 404},
+                '/qux'           : {'status': 500}
+            }
 
+def webDataToMap(data, enctype):
+    map = {}
+    if enctype == ENCTYPE['default']:
+        dataList = data.split('&')
+        for dl in dataList:
+            m = dl.split('=')
+            k = m[0]
+            if len(m) == 2:
+                map[k] = m[1]
+            else:
+                map[k] = ''
+    elif enctype == ENCTYPE['json']:
+        map = json.load(data)
+    
+    return map
 
 class HTTPServer_RequestHandler(BaseHTTPRequestHandler):
     def do_HEAD(self):
         self.send_response(200)
-        self.send_header('Content-type', MIMETYPE['html'])
+        self.send_header('Content-type', MIMETYPE['html']+';charset=UTF-8')
         self.end_headers()
-
+    
+    def sendMessageToWeb(self, msg):
+        self.send_response(200)
+        self.send_header('Content-type', MIMETYPE['html']+';charset=UTF-8')
+        self.end_headers()
+        self.wfile.write(msg.encode('utf-8'))
+        
     def do_GET(self):
         if self.path in pathsMap:
             self.respond(pathsMap[self.path])
@@ -47,17 +79,23 @@ class HTTPServer_RequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length']) #  Gets the size of data
-        post_data = self.rfile.read(content_length) #  Gets the data itself
+        post_data = self.rfile.read(content_length).decode('utf-8') #  Gets the data itself
         
+        mimetype = self.headers['Content-type']
         if self.path in pathsMap:
             if self.path == '/login':
-                
-                print("11111")
+                usrInfo = webDataToMap(post_data, mimetype)
+                manageServer = ManagerService()
+                isUsrVaild = manageServer.queryUsr(usrInfo['username'])
+                if isUsrVaild:
+                    self.sendMessageToWeb("登陆成功，正在跳转页面...")
+                else:
+                    self.sendMessageToWeb("登陆失败，正在跳转页面...")
         logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
-                str(self.path), str(self.headers), post_data.decode('utf-8'))
+                str(self.path), str(self.headers), post_data)
 
-        self.do_HEAD()
-        self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
+#         self.do_HEAD()
+#         self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
 
     def respond(self, opts):
         response = self.handle_http(opts['status'], self.path)
