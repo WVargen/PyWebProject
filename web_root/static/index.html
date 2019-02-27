@@ -16,7 +16,7 @@
         <h1>
             后台登录系统
         </h1>
-        <form>
+        <form action="/login" enctype="multipart/form-data" method="post">
             <input type="text" value="用户名" onFocus="this.value = '';" onBlur="if (this.value == '') {this.value = '用户名';}"
                    required="">
             <input type="password" value="Password" onFocus="this.value = '';" onBlur="if (this.value == '') {this.value = '';}"
