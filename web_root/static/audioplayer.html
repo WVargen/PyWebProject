@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>会议收听</title>
+    <!-- for-mobile-apps -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+</head>
+<body>
+    <!-- main -->
+    <div class="main">
+        <h1>
+            会议收听
+        </h1>
+        <audio controls preload="auto" autoplay name="media" id="mediaplayer" controlsList="nodownload">
+            <source id="audiosource" name="audio_source"  type="audio/mpeg"/>
+        </audio>
+    </div>
+    <div class="footer">
+        <p>
+            &copy 2019 Welcome Meeting Audio. All rights reserved.
+        </p>
+    </div>
+    <!-- //main -->
+    <script>
+        var audio = document.getElementById("mediaplayer");
+        var audioSrc = document.getElementById("audiosource");
+        function setAudioSource(srcPath){
+            audioSrc.src = srcPath;
+            audio.load();
+            if(audio.paused){
+                audio.paused = false;
+                audio.play();
+            }
+        }
+        var srcPath = "";
+        var data = "";
+        function getAudioSource(){
+            $.ajax({
+                type: "post",
+                url: "/audio_src",
+                data: data,
+                dataType: "json",
+                success: function (data) {
+                    //dataObj = JSON.stringify(data);
+                    //console.log('ajex dataObj:' + dataObj);
+                    if('audio_src_path' in data){
+                        srcPath = data.audio_src_path;
+                        setAudioSource(srcPath);
+                    } 
+                }
+            });
+        }
+        
+        getAudioSource();
+        
+    </script>
+</body>
+</html>
