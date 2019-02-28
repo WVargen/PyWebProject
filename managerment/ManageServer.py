@@ -31,6 +31,7 @@ class ManagerService:
         pwd = os.getcwd()
         self.usrdbPath = os.path.abspath(os.path.dirname(pwd)+os.path.sep+".") + os.path.sep + os.path.join("database", "usrdb")
         self.usrdb = json_load(self.usrdbPath)
+        self.audioSrcPath = "http://music.163.com/song/media/outer/url?id=317151.mp3"
         
     def getUsrdb(self):
         return self.usrdb
@@ -53,4 +54,9 @@ class ManagerService:
             json_save(self.usrdb, self.usrdbPath)
         else:
             pass 
+        
+    def setAudioSrcPath(self, audioSrcPath):
+        self.audioSrcPath = audioSrcPath
     
+    def getAudioSrcPath(self):
+        return self.audioSrcPath

@@ -24,12 +24,14 @@ MIMETYPE = {
                 'mpg'  : 'video/mpeg',
                 'mov'  : 'video/quicktime'
             }
+
 ENCTYPE  = {
                 'default'    : 'application/x-www-form-urlencoded',
                 'file'       : 'multipart/form-data',
                 'space2plus' : 'text/plain',
                 'json'       : 'application/json'
-            }   
+            }  
+ 
 pathsMap = {
                 '/favicon.ico'   : {'status': 200, 'html_path': '../web_root/images/wb_favicon.ico'},
                 '/home'          : {'status': 200, 'mimetype' : MIMETYPE['html'], 'html_path': '../web_root/static/index.html'},
@@ -37,6 +39,7 @@ pathsMap = {
             
                 '/login'         : {'status': 200, 'mimetype' : MIMETYPE['html'], 'html_path': '../web_root/static/login.html'},
                 '/login_success' : {'status': 200, 'mimetype' : MIMETYPE['html'], 'html_path': '../web_root/static/login_success.html'},
+                '/login_fail'    : {'status': 200, 'mimetype' : MIMETYPE['html'], 'html_path': '../web_root/static/login_fail.html'},
                 '/audioplayer'   : {'status': 200, 'mimetype' : MIMETYPE['html'], 'html_path': '../web_root/static/audioplayer.html'},
                 '/audio_src'     : {'status': 200, 'mimetype' : MIMETYPE['html']},
                 
@@ -45,6 +48,8 @@ pathsMap = {
                 '/baz'           : {'status': 404},
                 '/qux'           : {'status': 500}
             }
+
+pathsVisiable = ['/favicon.ico', '/home', '/css/style.css', '/audioplayer']
 
 def webDataToMap(data, enctype):
     map = {}
@@ -85,7 +90,7 @@ class HTTPServer_RequestHandler(BaseHTTPRequestHandler):
             self.respond(pathsMap[self.path])
         else:
             self.respond({'status': 500})
-            logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
+        logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
         self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
 
     def do_POST(self):
@@ -97,26 +102,27 @@ class HTTPServer_RequestHandler(BaseHTTPRequestHandler):
             manageServer = ManagerService()
             if self.path == '/login':
                 usrInfo = webDataToMap(post_data, mimetype)
-                
                 isUsrVaild = manageServer.queryUsr(usrInfo['username'], usrInfo['password'])
                 if isUsrVaild:
-                    self.respondHtml("/login_success")
+                    self.respondToAllRequest("/login_success")
+                    
                 else:
-                    self.sendMessageToWeb("登陆失败，正在跳转页面...")
+                    self.respondToAllRequest("/login_fail")
             elif self.path == '/audio_src':
                 data = {}
-                data["audio_src_path"] = "http://music.163.com/song/media/outer/url?id=317151.mp3"
+                data["audio_src_path"] = manageServer.getAudioSrcPath()
                 sendDataJson = json.dumps(data)
                 self.sendMessageToWeb(sendDataJson)
-        else:
+        #else:
             logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
                 str(self.path), str(self.headers), post_data)
 
     def respond(self, opts):
-        response = self.handle_http(opts['status'], self.path)
-        self.wfile.write(response)
+        if self.path in pathsVisiable:
+            response = self.handle_http(opts['status'], self.path)
+            self.wfile.write(response)
         
-    def respondHtml(self, path):
+    def respondToAllRequest(self, path):
         opts = pathsMap[path]
         if 'status' in opts:
             response = self.handle_http(opts['status'], path)
