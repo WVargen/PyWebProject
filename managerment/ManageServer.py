@@ -39,11 +39,13 @@ class ManagerService:
         self.usrdb[key] = value
         json_save(self.usrdb, self.usrdbPath)
         
-    def queryUsr(self, usrname):
-        if usrname in self.usrdb:
-            return True
-        else:
+    def queryUsr(self, usrname, password):
+        if not usrname in self.usrdb:
             return False
+        if not password == self.usrdb[usrname]:
+            return False
+        
+        return True
         
     def deleteUsr(self, usrname):
         if usrname in self.usrdb:

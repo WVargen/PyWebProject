@@ -6,6 +6,8 @@ Created on 2019年2月26日
 
 import sys
 import os
+from time import sleep
+from mimetypes import init
 
 sys.path.append('../') 
 
@@ -33,8 +35,11 @@ pathsMap = {
                 '/home'          : {'status': 200, 'mimetype' : MIMETYPE['html'], 'html_path': '../web_root/static/index.html'},
                 '/css/style.css' : {'status': 200, 'mimetype' : MIMETYPE['css'], 'html_path': '../web_root/css/style.css'},
             
-                '/login'         : {'status': 200},
-            
+                '/login'         : {'status': 200, 'mimetype' : MIMETYPE['html'], 'html_path': '../web_root/static/login.html'},
+                '/login_success' : {'status': 200, 'mimetype' : MIMETYPE['html'], 'html_path': '../web_root/static/login_success.html'},
+                '/audioplayer'   : {'status': 200, 'mimetype' : MIMETYPE['html'], 'html_path': '../web_root/static/audioplayer.html'},
+                '/audio_src'     : {'status': 200, 'mimetype' : MIMETYPE['html']},
+                
                 '/foo'           : {'status': 200},
                 '/bar'           : {'status': 302},
                 '/baz'           : {'status': 404},
@@ -58,6 +63,9 @@ def webDataToMap(data, enctype):
     return map
 
 class HTTPServer_RequestHandler(BaseHTTPRequestHandler):
+    def __init__(self, request, client_address, server):
+        BaseHTTPRequestHandler.__init__(self, request, client_address, server)
+        
     def do_HEAD(self):
         self.send_response(200)
         self.send_header('Content-type', MIMETYPE['html']+';charset=UTF-8')
@@ -67,14 +75,17 @@ class HTTPServer_RequestHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', MIMETYPE['html']+';charset=UTF-8')
         self.end_headers()
+        self.wfile.flush()
         self.wfile.write(msg.encode('utf-8'))
         
     def do_GET(self):
         if self.path in pathsMap:
+            if self.path == '/home':
+                logging.info('\n\n>>>Someone try to connect %s %s', self.headers['host'], self.path)
             self.respond(pathsMap[self.path])
         else:
             self.respond({'status': 500})
-        logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
+            logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
         self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
 
     def do_POST(self):
@@ -83,31 +94,45 @@ class HTTPServer_RequestHandler(BaseHTTPRequestHandler):
         
         mimetype = self.headers['Content-type']
         if self.path in pathsMap:
+            manageServer = ManagerService()
             if self.path == '/login':
                 usrInfo = webDataToMap(post_data, mimetype)
-                manageServer = ManagerService()
-                isUsrVaild = manageServer.queryUsr(usrInfo['username'])
+                
+                isUsrVaild = manageServer.queryUsr(usrInfo['username'], usrInfo['password'])
                 if isUsrVaild:
-                    self.sendMessageToWeb("登陆成功，正在跳转页面...")
+                    self.respondHtml("/login_success")
                 else:
                     self.sendMessageToWeb("登陆失败，正在跳转页面...")
-        logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
+            elif self.path == '/audio_src':
+                data = {}
+                data["audio_src_path"] = "http://music.163.com/song/media/outer/url?id=317151.mp3"
+                sendDataJson = json.dumps(data)
+                self.sendMessageToWeb(sendDataJson)
+        else:
+            logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
                 str(self.path), str(self.headers), post_data)
-
-#         self.do_HEAD()
-#         self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
 
     def respond(self, opts):
         response = self.handle_http(opts['status'], self.path)
         self.wfile.write(response)
-
+        
+    def respondHtml(self, path):
+        opts = pathsMap[path]
+        if 'status' in opts:
+            response = self.handle_http(opts['status'], path)
+        else:
+            response = self.handle_http(200, path)
+        self.wfile.flush()
+        self.wfile.write(response)
+        
     def handle_http(self, status_code, path):
         self.send_response(status_code)
         
         htmlContent = ''
         htmlPath = ''
-        if self.path in pathsMap:
-            p = pathsMap[self.path]
+        
+        if path in pathsMap:
+            p = pathsMap[path]
             if 'mimetype' in p:
                 mimetype = p['mimetype']
                 self.send_header('Content-type', mimetype)
@@ -117,7 +142,7 @@ class HTTPServer_RequestHandler(BaseHTTPRequestHandler):
                 htmlPath = p['html_path']
                 with open(htmlPath, 'rb') as f:
                     htmlContent = f.read()
-            self.end_headers()
+            self.end_headers()   
         else:
             self.send_header('Content-type', MIMETYPE['html'])
             self.end_headers()
