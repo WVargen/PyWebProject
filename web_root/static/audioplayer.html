@@ -5,22 +5,25 @@
     <!-- for-mobile-apps -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link href="css/style.css" rel="stylesheet" type="text/css" media="all" />
     <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 </head>
 <body>
     <!-- main -->
-    <div class="main">
+    <header class = "head">
         <h1>
             会议收听
         </h1>
-        <audio controls preload="auto" autoplay name="media" id="mediaplayer" controlsList="nodownload">
+    </header>
+    <div class="main">
+        <audio controls preload="auto" autoplay name="media" id="mediaplayer" controlsList="nodownload" style="display:block; margin:30px auto;">
             <source id="audiosource" name="audio_source"  type="audio/mpeg"/>
         </audio>
     </div>
     <div class="footer">
-        <p>
+        <!-- <p>
             &copy 2019 Welcome Meeting Audio. All rights reserved.
-        </p>
+        </p> -->
     </div>
     <!-- //main -->
     <script>

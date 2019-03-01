@@ -26,6 +26,14 @@ body{
 	font-family: 'Cabin', sans-serif !important;
 	/* background:url(../images/banner.jpg) 0px 0px; */
 }
+.head h1{
+	color: #ffffff;
+    text-align: center;
+	font-size: 2em;
+	padding: 0.3em;
+	margin: 0 0 1.5em;
+	background: #7e8fad
+}
 /*-- main --*/
 .main{
 	width: 35%;

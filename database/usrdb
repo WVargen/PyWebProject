@@ -1,5 +1,5 @@
 {
-    "admin": "123456",
-    "new_usr": "12345678",
-    "1":"Password"
+    "admin": {"password" : "123456", "role" : "1"},
+    "new_usr": {"password" : "12345678", "role" : "2"},
+    "1":{"password" : "Password", "role" : "2"}
 }

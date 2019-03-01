@@ -32,7 +32,7 @@ ENCTYPE  = {
                 'json'       : 'application/json'
             }  
  
-pathsMap = {
+PATH_MAP = {
                 '/favicon.ico'   : {'status': 200, 'html_path': '../web_root/images/wb_favicon.ico'},
                 '/home'          : {'status': 200, 'mimetype' : MIMETYPE['html'], 'html_path': '../web_root/static/index.html'},
                 '/css/style.css' : {'status': 200, 'mimetype' : MIMETYPE['css'], 'html_path': '../web_root/css/style.css'},
@@ -48,9 +48,16 @@ pathsMap = {
                 '/baz'           : {'status': 404},
                 '/qux'           : {'status': 500}
             }
+PATH_VISIABLE = ['/favicon.ico', '/home', '/css/style.css', '/audioplayer']
 
-pathsVisiable = ['/favicon.ico', '/home', '/css/style.css', '/audioplayer']
+AUDIO_SRC_PATH = ""
+manageServer = ManagerService()
 
+def updateAudioSrcPath():
+    global AUDIO_SRC_PATH 
+    AUDIO_SRC_PATH = manageServer.getAudioSrcPath()
+    print("AUDIO_SRC_PATH : %s" % AUDIO_SRC_PATH)
+    
 def webDataToMap(data, enctype):
     map = {}
     if enctype == ENCTYPE['default']:
@@ -84,33 +91,34 @@ class HTTPServer_RequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(msg.encode('utf-8'))
         
     def do_GET(self):
-        if self.path in pathsMap:
+        if self.path in PATH_MAP:
             if self.path == '/home':
                 logging.info('\n\n>>>Someone try to connect %s %s', self.headers['host'], self.path)
-            self.respond(pathsMap[self.path])
+            self.respond(PATH_MAP[self.path])
         else:
             self.respond({'status': 500})
         logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
-        self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
+        #self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length']) #  Gets the size of data
         post_data = self.rfile.read(content_length).decode('utf-8') #  Gets the data itself
         
         mimetype = self.headers['Content-type']
-        if self.path in pathsMap:
-            manageServer = ManagerService()
+        if self.path in PATH_MAP:
             if self.path == '/login':
                 usrInfo = webDataToMap(post_data, mimetype)
                 isUsrVaild = manageServer.queryUsr(usrInfo['username'], usrInfo['password'])
                 if isUsrVaild:
                     self.respondToAllRequest("/login_success")
-                    
+                    updateAudioSrcPath()
+                    print("AUDIO_SRC_PATH : %s" % AUDIO_SRC_PATH)
                 else:
                     self.respondToAllRequest("/login_fail")
             elif self.path == '/audio_src':
                 data = {}
-                data["audio_src_path"] = manageServer.getAudioSrcPath()
+                data["audio_src_path"] = AUDIO_SRC_PATH
+                
                 sendDataJson = json.dumps(data)
                 self.sendMessageToWeb(sendDataJson)
         #else:
@@ -118,12 +126,12 @@ class HTTPServer_RequestHandler(BaseHTTPRequestHandler):
                 str(self.path), str(self.headers), post_data)
 
     def respond(self, opts):
-        if self.path in pathsVisiable:
+        if self.path in PATH_VISIABLE:
             response = self.handle_http(opts['status'], self.path)
             self.wfile.write(response)
         
     def respondToAllRequest(self, path):
-        opts = pathsMap[path]
+        opts = PATH_MAP[path]
         if 'status' in opts:
             response = self.handle_http(opts['status'], path)
         else:
@@ -137,8 +145,8 @@ class HTTPServer_RequestHandler(BaseHTTPRequestHandler):
         htmlContent = ''
         htmlPath = ''
         
-        if path in pathsMap:
-            p = pathsMap[path]
+        if path in PATH_MAP:
+            p = PATH_MAP[path]
             if 'mimetype' in p:
                 mimetype = p['mimetype']
                 self.send_header('Content-type', mimetype)
