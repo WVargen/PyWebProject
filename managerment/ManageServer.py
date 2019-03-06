@@ -1,5 +1,6 @@
 import json
 import os
+from builtins import sorted
 
 def json_save(objs, filePath):
     try:
@@ -31,8 +32,8 @@ class ManagerService:
         pwd = os.getcwd()
         self.usrdbPath = os.path.abspath(os.path.dirname(pwd)+os.path.sep+".") + os.path.sep + os.path.join("database", "usrdb")
         self.usrdb = json_load(self.usrdbPath)
-        #self.audioSrcPath = "http://music.163.com/song/media/outer/url?id=317151.mp3"
-        self.audioSrcPath = "http://192.168.1.102:8090/demoAudio.mp3"
+        self.audioSrcPath = "http://music.163.com/song/media/outer/url?id=317151.mp3"
+        #self.audioSrcPath = "http://192.168.1.102:8090/demoAudio.mp3"
         
     def getUsrdb(self):
         return self.usrdb
@@ -63,6 +64,10 @@ class ManagerService:
         else:
             pass 
         
+    def getUsrList(self):
+        usrNameList = sorted(self.usrdb.keys())
+        return usrNameList
+           
     def setAudioSrcPath(self, audioSrcPath):
         self.audioSrcPath = audioSrcPath
     

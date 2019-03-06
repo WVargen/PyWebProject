@@ -1,0 +1,59 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>正在跳转</title>
+    <!-- for-mobile-apps -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" href="css/style.css" charset="utf-8" type="text/css" media="all" />
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+</head>
+<body>
+    <!-- main -->
+    <header class = "head">
+        <h1>
+            联系人
+        </h1>
+    </header>
+    <div class="main">
+        <form id="contacts_list" action="/get_contact" method="post" >
+        </form>
+    </div>
+    
+    <script>
+        var contactsList = document.getElementById("contacts_list");
+        var data = '';
+        var contacts = [];
+        function updateContactsList(contacts){
+            innerHtml = ""
+            for(var i=0; i<contacts.length; i++){
+                innerHtml += "<input type='submit' value='"+contacts[i]+"'/>"
+            }
+            contactsList.innerHTML = innerHtml;
+        }
+        $(function () {
+            $("input[type='submit']").click(function () {
+                var text = $(this).val();
+                $("#contacts_list").attr("action", 'getContact$'+text);
+            });
+        });
+        function getContactsList(){
+            $.ajax({
+                type: "post",
+                url: "/contacts_list",
+                data: data,
+                dataType: "json",
+                success: function (data) {
+                    if('contacts' in data){
+                        contacts = data.contacts;
+                        updateContactsList(contacts);
+                    } 
+                }
+            });
+        }
+        getContactsList();
+    </script>
+    <!-- //main -->
+</body>
+</html>
